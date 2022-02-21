@@ -31,6 +31,11 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+// rendering urls_new
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
 // rendering urls_show
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { 

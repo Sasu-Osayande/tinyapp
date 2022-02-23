@@ -11,11 +11,10 @@
       </div>
     </div>
     <% if (!user) { %>
-      <form method="POST" action="/login">
-        <input name="email" type="text" placeholder="Email Address">
-        <button type="submit" class="btn btn-outline-dark">Login</button>
-        <link href="#">
-      </form>
+      <style>
+        p { margin-bottom: 0px; }
+      </style>
+      <p><a style="padding-right: 5px; color:aliceblue;" href="/register">Register</a> <a style="color:aliceblue;" href="/login">Login</a></p>
     <% } else { %>
       <form method="POST" action="/logout">
         <style>

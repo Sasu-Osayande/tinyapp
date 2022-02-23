@@ -3,9 +3,9 @@ const app = express();
 const PORT = 8080; // default port 8080
 
 const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
-const cookieParser = require('cookie-parser');
+const cookieParser = require("cookie-parser");
 app.use(cookieParser());
 
 app.set("view engine", "ejs");
@@ -15,32 +15,44 @@ app.listen(PORT, () => {
 });
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b2xVn2: "http://www.lighthouselabs.ca",
+  "9sm5xK": "http://www.google.com",
 };
 
-const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "123"
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "123",
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "456"
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "456",
   },
-}
+};
 
 function generateRandomString(length) {
   // length = 6;
   let randomString = "";
-  let characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let characters =
+    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-  for (let i = 0; i <= length - 1; i ++) {
-    randomString += characters.charAt(Math.floor(Math.random() * (characters.length)));
+  for (let i = 0; i <= length - 1; i++) {
+    randomString += characters.charAt(
+      Math.floor(Math.random() * characters.length)
+    );
   }
   return randomString;
+}
+
+const emailLookUp = (email, users) => {
+  for (const user in users) {
+    if (email === users[user].email) {
+      return users[user];
+    }
+  }
+  return null;
 };
 
 app.get("/", (req, res) => {
@@ -58,26 +70,26 @@ app.get("/hello", (req, res) => {
 // sending data to urls_index
 app.get("/urls", (req, res) => {
   const templateVars = {
-    user: req.cookies["user_id"], 
+    user: req.cookies["user_id"],
     urls: urlDatabase,
-   };
+  };
   res.render("urls_index", templateVars);
 });
 
 // rendering urls_new
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    user: req.cookies["user_id"], 
-   };
+    user: req.cookies["user_id"],
+  };
   res.render("urls_new", templateVars);
 });
 
 // rendering urls_show
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { 
+  const templateVars = {
     user: req.cookies["user_id"],
-    shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL], 
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL],
   };
   res.render("urls_show", templateVars);
 });
@@ -86,12 +98,12 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString(6);
   const longURL = req.body.longURL;
 
-  console.log(req.body);  // Log the POST request body to the console
+  console.log(req.body); // Log the POST request body to the console
 
   // updates database with new URL
   urlDatabase[shortURL] = longURL;
 
-  res.redirect(`/urls/${shortURL}`)
+  res.redirect(`/urls/${shortURL}`);
 });
 
 // redirects to its long URL
@@ -103,7 +115,7 @@ app.get("/u/:shortURL", (req, res) => {
 // removes URL resource
 app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls")
+  res.redirect("/urls");
 });
 
 // updates a URL resource
@@ -126,8 +138,8 @@ app.post("/logout", (req, res) => {
 
 app.get("/register", (req, res) => {
   const templateVars = {
-    user: req.cookies["user_id"], 
-   };
+    user: req.cookies["user_id"],
+  };
   res.render("urls_register", templateVars);
 });
 
@@ -139,8 +151,18 @@ app.post("/register", (req, res) => {
     password: req.body.password,
   };
   users[id] = user;
-  // user[id] = user;
-  res.cookie("user_id", user);
-  console.log("Users Object:", users);
-  res.redirect("/urls");
+
+  if (user.email == "" || user.password == "") {
+    res.status(400).send("Input fields cannot be empty. Please try again");
+    return;
+  }
+
+  const userEmail = emailLookUp(req.body.email, users)
+    if (userEmail) {
+      res.status(400).send("User already exists. Please try again.");
+  }
+    // user[id] = user;
+    res.cookie("user_id", user);
+    console.log("Users Object:", users);
+    res.redirect("/urls");
 });

@@ -7,8 +7,15 @@ const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const cookieParser = require("cookie-parser");
-app.use(cookieParser());
+// const cookieParser = require("cookie-parser");
+// app.use(cookieParser());
+
+const cookieSession = require('cookie-session');
+
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2', 'key3', 'key4'],
+}));
 
 const bcrypt = require('bcryptjs');
 const password = "123";
@@ -93,7 +100,7 @@ app.get("/hello", (req, res) => {
 
 // sending data to urls_index
 app.get("/urls", (req, res) => {
-  const user = req.cookies["user_id"];
+  const user = req.session.user_id;
   console.log("user:", users);
   const templateVars = {
     user,
@@ -108,7 +115,7 @@ app.get("/urls", (req, res) => {
 // rendering urls_new
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    user: req.cookies["user_id"] || null,
+    user: req.session.user_id || null,
   };
   if (templateVars.user == null) {
     return res.redirect(403, "/login");
@@ -125,7 +132,7 @@ app.get("/u/:shortURL", (req, res) => {
 // rendering urls_show
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
-    user: req.cookies["user_id"],
+    user: req.session.user_id,
     shortURL: req.params.shortURL,
   };
   if (urlDatabase[req.params.shortURL] == undefined) {
@@ -138,14 +145,14 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.get("/register", (req, res) => {
   const templateVars = {
-    user: req.cookies["user_id"],
+    user: req.session.user_id,
   };
   res.render("urls_register", templateVars);
 });
 
 app.get("/login", (req, res) => {
   const templateVars = {
-    user: req.cookies["user_id"],
+    user: req.session.user_id,
   };
   res.render("urls_login", templateVars);
 });
@@ -159,7 +166,7 @@ app.post("/urls", (req, res) => {
   // updates database with new URL
   urlDatabase[shortURL] = {
     longURL,
-    user: req.cookies["user_id"],
+    user: req.session.user_id,
   }
   res.redirect(`/urls/${shortURL}`);
 });
@@ -194,7 +201,7 @@ app.post("/login", (req, res) => {
         res.status(403).send("Email or password is incorrect.");
         return;
       } else {
-        res.cookie("user_id", user);
+        req.session.user_id = user;
         res.redirect("/urls");
       }
     }
@@ -202,8 +209,8 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  const { user } = req.body;
-  res.clearCookie("user_id", user);
+  // const { user } = req.body;
+  req.session.user_id = null;
   res.redirect("/login");
 });
 
@@ -227,7 +234,7 @@ console.log(emailLookUp(req.body.email, users));
     return;
   }
   // user[id] = user;
-  res.cookie("user_id", user);
+  req.session.user_id = user;
   console.log("Users Object:", users);
   res.redirect("/urls");
 });

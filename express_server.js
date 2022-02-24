@@ -15,8 +15,14 @@ app.listen(PORT, () => {
 });
 
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "userRandomID"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "user2RandomID"
+  }
 };
 
 const users = {
@@ -80,8 +86,11 @@ app.get("/urls", (req, res) => {
 // rendering urls_new
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    user: req.cookies["user_id"],
+    user: req.cookies["user_id"] || null,
   };
+  if (templateVars.user == null) {
+    return res.redirect(403, "/login");
+  }
   res.render("urls_new", templateVars);
 });
 
@@ -90,8 +99,12 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
     user: req.cookies["user_id"],
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
   };
+  if (urlDatabase[req.params.shortURL] == undefined) {
+    res.status(404).send("ID does not exist.");
+    return;
+  }
+  longURL = urlDatabase[req.params.shortURL].longURL
   res.render("urls_show", templateVars);
 });
 
@@ -102,14 +115,16 @@ app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
 
   // updates database with new URL
-  urlDatabase[shortURL] = longURL;
-
+  urlDatabase[shortURL] = {
+    longURL,
+    user: req.cookies["user_id"],
+  }
   res.redirect(`/urls/${shortURL}`);
 });
 
 // redirects to its long URL
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 

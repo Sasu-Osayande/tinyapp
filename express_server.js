@@ -4,6 +4,8 @@ const PORT = 8080; // default port 8080
 
 // const morgan = require('morgan');
 
+const { getUsersByEmail } = require("./helper");
+
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -64,16 +66,6 @@ function generateRandomString(length) {
   }
   return randomString;
 }
-
-const emailLookUp = (email, users) => {
-  const userKeys = Object.keys(users);
-  for (const user of userKeys) {
-    if (users[user].email === email) {
-      return users[user];
-    }
-  }
-  return null;
-};
 
 const urlsForUser = (id) => {
   const urlsObj = {};
@@ -191,9 +183,9 @@ app.post("/login", (req, res) => {
     email: req.body.email,
     password: hashedPassword,
   };
-  const userEmail = emailLookUp(req.body.email, users);
+  const userEmail = getUsersByEmail(req.body.email, users);
   for (userKey in users) {
-    if (userEmail === null) {
+    if (userEmail === undefined) {
       res.status(403).send("User cannot be found.");
     }
     if (userEmail) {
@@ -227,8 +219,8 @@ app.post("/register", (req, res) => {
     res.status(400).send("Input fields cannot be empty. Please try again");
     return;
   }
-console.log(emailLookUp(req.body.email, users));
-  const userEmail = emailLookUp(req.body.email, users);
+console.log(getUsersByEmail(req.body.email, users));
+  const userEmail = getUsersByEmail(req.body.email, users);
   if (userEmail) {
     res.status(400).send("User already exists. Please try again.");
     return;

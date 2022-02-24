@@ -10,6 +10,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const cookieParser = require("cookie-parser");
 app.use(cookieParser());
 
+const bcrypt = require('bcryptjs');
+const password = "123";
+const hashedPassword = bcrypt.hashSync(password, 10);
+
 app.set("view engine", "ejs");
 
 app.listen(PORT, () => {
@@ -31,12 +35,12 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "123",
+    password: "$2a$10$azcPh0.o/FSd.vEMVo91ou9zKfzt2UqXBP0ES060111uB9JFhLfuS",
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "456",
+    password: "$2a$10$azcPh0.o/FSd.vEMVo91ou9zKfzt2UqXBP0ES060111uB9JFhLfuS",
   },
 };
 
@@ -174,17 +178,23 @@ app.post("/urls/:id", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { password } = req.body;
+  let id = generateRandomString(12);
+  const user = {
+    id,
+    email: req.body.email,
+    password: hashedPassword,
+  };
   const userEmail = emailLookUp(req.body.email, users);
   for (userKey in users) {
     if (userEmail === null) {
       res.status(403).send("User cannot be found.");
     }
     if (userEmail) {
-      if (users[userKey].password !== password) {
+      if (bcrypt.compareSync(password, hashedPassword) === false) {
         res.status(403).send("Email or password is incorrect.");
         return;
       } else {
-        res.cookie("user_id", userKey);
+        res.cookie("user_id", user);
         res.redirect("/urls");
       }
     }
@@ -202,7 +212,7 @@ app.post("/register", (req, res) => {
   const user = {
     id,
     email: req.body.email,
-    password: req.body.password,
+    password: hashedPassword,
   };
   users[id] = user;
 
@@ -210,10 +220,11 @@ app.post("/register", (req, res) => {
     res.status(400).send("Input fields cannot be empty. Please try again");
     return;
   }
-
+console.log(emailLookUp(req.body.email, users));
   const userEmail = emailLookUp(req.body.email, users);
   if (userEmail) {
     res.status(400).send("User already exists. Please try again.");
+    return;
   }
   // user[id] = user;
   res.cookie("user_id", user);

@@ -12,11 +12,13 @@
   <%- include('partials/_header') %>
 
   <main style="margin: 1em;">
-    <h3>Welcome Back</h3>
+    <h3>Login</h3>
     <form method="POST" action="/login">
       <div class="form-group mb-2">
-        <input class="form-control" type="email" name="email" placeholder="Email Address" style="width: 300px; margin-top: 1em">
-        <input class="form-control" type="password" name="password" placeholder="Password" style="width: 300px; margin-top: 1em; margin-bottom: 1em">
+        <p>Email Address</p>
+        <input class="form-control" type="email" name="email" placeholder="Enter email" style="width: 300px; margin-top: 0.4em; margin-bottom: 11px;">
+        <p>Password</p>
+        <input class="form-control" type="password" name="password" placeholder="Password" style="width: 300px; margin-top: 0.4em; margin-bottom: 1em">
         <button style="margin-left: 14.4em;" type="submit" class="btn btn-primary">Login</button>
       </div>
     </form>

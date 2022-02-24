@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 
+// const morgan = require('morgan');
+
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -62,6 +64,17 @@ const emailLookUp = (email, users) => {
   return null;
 };
 
+const urlsForUser = (id) => {
+  const urlsObj = {};
+  const shortURLS = Object.keys(urlDatabase);
+  for (const shortURL of shortURLS) {
+    if (id === urlDatabase[shortURL].userID) {
+      urlsObj[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return urlsObj;
+};
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -76,10 +89,15 @@ app.get("/hello", (req, res) => {
 
 // sending data to urls_index
 app.get("/urls", (req, res) => {
+  const user = req.cookies["user_id"];
+  console.log("user:", users);
   const templateVars = {
-    user: req.cookies["user_id"],
-    urls: urlDatabase,
+    user,
+    urls: urlsForUser(users[user]),
   };
+  if (!templateVars.user) {
+    return res.status(403).send("Please <a href='/login'>login</a> to access.");
+  }
   res.render("urls_index", templateVars);
 });
 
@@ -92,6 +110,12 @@ app.get("/urls/new", (req, res) => {
     return res.redirect(403, "/login");
   }
   res.render("urls_new", templateVars);
+});
+
+// redirects to its long URL
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL].longURL;
+  res.redirect(longURL);
 });
 
 // rendering urls_show
@@ -108,6 +132,20 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.get("/register", (req, res) => {
+  const templateVars = {
+    user: req.cookies["user_id"],
+  };
+  res.render("urls_register", templateVars);
+});
+
+app.get("/login", (req, res) => {
+  const templateVars = {
+    user: req.cookies["user_id"],
+  };
+  res.render("urls_login", templateVars);
+});
+
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString(6);
   const longURL = req.body.longURL;
@@ -122,12 +160,6 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-// redirects to its long URL
-app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longURL);
-});
-
 // removes URL resource
 app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL];
@@ -140,15 +172,8 @@ app.post("/urls/:id", (req, res) => {
   res.redirect(`/urls`);
 });
 
-app.get("/login", (req, res) => {
-  const templateVars = {
-    user: req.cookies["user_id"],
-  };
-  res.render("urls_login", templateVars);
-});
-
 app.post("/login", (req, res) => {
-  const { user, password } = req.body;
+  const { password } = req.body;
   const userEmail = emailLookUp(req.body.email, users);
   for (userKey in users) {
     if (userEmail === null) {
@@ -159,7 +184,7 @@ app.post("/login", (req, res) => {
         res.status(403).send("Email or password is incorrect.");
         return;
       } else {
-        res.cookie("user_id", user);
+        res.cookie("user_id", userKey);
         res.redirect("/urls");
       }
     }
@@ -170,13 +195,6 @@ app.post("/logout", (req, res) => {
   const { user } = req.body;
   res.clearCookie("user_id", user);
   res.redirect("/login");
-});
-
-app.get("/register", (req, res) => {
-  const templateVars = {
-    user: req.cookies["user_id"],
-  };
-  res.render("urls_register", templateVars);
 });
 
 app.post("/register", (req, res) => {

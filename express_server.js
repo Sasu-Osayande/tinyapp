@@ -47,8 +47,9 @@ function generateRandomString(length) {
 }
 
 const emailLookUp = (email, users) => {
-  for (const user in users) {
-    if (email === users[user].email) {
+  const userKeys = Object.keys(users);
+  for (const user of userKeys) {
+    if (users[user].email === email) {
       return users[user];
     }
   }
@@ -132,15 +133,28 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const { user } = req.body;
-  res.cookie("user_id", user);
-  res.redirect("/urls");
+  const { user, password } = req.body;
+  const userEmail = emailLookUp(req.body.email, users);
+  for (userKey in users) {
+    if (userEmail === null) {
+      res.status(403).send("User cannot be found.");
+    }
+    if (userEmail) {
+      if (users[userKey].password !== password) {
+        res.status(403).send("Email or password is incorrect.");
+        return;
+      } else {
+        res.cookie("user_id", user);
+        res.redirect("/urls");
+      }
+    }
+  }
 });
 
 app.post("/logout", (req, res) => {
   const { user } = req.body;
   res.clearCookie("user_id", user);
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 app.get("/register", (req, res) => {
@@ -164,12 +178,12 @@ app.post("/register", (req, res) => {
     return;
   }
 
-  const userEmail = emailLookUp(req.body.email, users)
-    if (userEmail) {
-      res.status(400).send("User already exists. Please try again.");
+  const userEmail = emailLookUp(req.body.email, users);
+  if (userEmail) {
+    res.status(400).send("User already exists. Please try again.");
   }
-    // user[id] = user;
-    res.cookie("user_id", user);
-    console.log("Users Object:", users);
-    res.redirect("/urls");
+  // user[id] = user;
+  res.cookie("user_id", user);
+  console.log("Users Object:", users);
+  res.redirect("/urls");
 });

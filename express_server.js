@@ -2,7 +2,8 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 
-// const morgan = require('morgan');
+const morgan = require('morgan');
+app.use(morgan('dev'));
 
 const { getUsersByEmail } = require("./helper");
 
@@ -79,7 +80,15 @@ const urlsForUser = (id) => {
 };
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const user = req.session.user_id;
+  const templateVars = {
+    user,
+  };
+  if (user) {
+    res.redirect("/urls");
+    return;
+  }
+  res.render("urls_login", templateVars);
 });
 
 app.get("/urls.json", (req, res) => {
@@ -117,6 +126,10 @@ app.get("/urls/new", (req, res) => {
 
 // redirects to its long URL
 app.get("/u/:shortURL", (req, res) => {
+  if (urlDatabase[req.params.shortURL] == undefined) {
+    res.status(404).send("ID does not exist.");
+    return;
+  }
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
@@ -130,6 +143,9 @@ app.get("/urls/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL] == undefined) {
     res.status(404).send("ID does not exist.");
     return;
+  }
+  if (!templateVars.user) {
+    return res.status(403).send("Please <a href='/login'>login</a> to access.");
   }
   longURL = urlDatabase[req.params.shortURL].longURL
   res.render("urls_show", templateVars);

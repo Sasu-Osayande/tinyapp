@@ -1,10 +1,11 @@
+// import from helper functions
+const { getUsersByEmail, generateRandomString } = require("./helper");
+
+// middleware
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 
-const { getUsersByEmail, generateRandomString } = require("./helper");
-
-// middleware
 const morgan = require("morgan");
 app.use(morgan("dev"));
 
@@ -25,10 +26,6 @@ const password = "123";
 const hashedPassword = bcrypt.hashSync(password, 10);
 
 app.set("view engine", "ejs");
-
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
-});
 
 const urlDatabase = {
   b6UTxQ: {
@@ -232,4 +229,8 @@ app.post("/register", (req, res) => {
   users[id] = user;
   req.session.user_id = user.id;
   res.redirect("/urls");
+});
+
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
 });

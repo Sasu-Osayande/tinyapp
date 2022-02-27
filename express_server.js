@@ -182,19 +182,17 @@ app.post("/urls/:id", (req, res) => {
 app.post("/login", (req, res) => {
   const { password } = req.body;
   const user = getUsersByEmail(req.body.email, users);
-  for (userKey in users) {
-    if (user === undefined) {
+    if (!user) {
       res.status(403).send("User cannot be found.");
     }
     if (user) {
-      if (bcrypt.compareSync(password, hashedPassword) === false) {
+      if (!bcrypt.compareSync(password, hashedPassword)) {
         return res.status(403).send("Email or password is incorrect.");
       } else {
         req.session.user_id = user.id;
         res.redirect("/urls");
       }
     }
-  }
 });
 
 app.post("/logout", (req, res) => {
@@ -206,7 +204,7 @@ app.post("/register", (req, res) => {
 
   const { email, password } = req.body
 
-  if (email === "" || password === "") {
+  if (!email || (!password)) {
     return res.status(400).send("Input fields cannot be empty. Please try again.");
   }
   const userEmail = getUsersByEmail(req.body.email, users);

@@ -182,7 +182,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 // updates a URL resource
 app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id] = req.body.longURL;
+  urlDatabase[req.params.id].longURL = req.body.longURL;
   res.redirect(`/urls`);
 });
 

@@ -92,8 +92,7 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls", (req, res) => {
   const user = getUserByID(req.session.user_id);
   if (!user) {
-    res.status(403).send("Please <a href='/login'>login</a> to access.");
-    return;
+    return res.status(403).send("Please <a href='/login'>login</a> to access.");
   }
   const templateVars = {
     user,
@@ -109,8 +108,7 @@ app.get("/urls/new", (req, res) => {
     user: user || null,
   };
   if (templateVars.user == null) {
-    res.redirect(403, "/login");
-    return;
+    return res.redirect(403, "/login");
   }
   res.render("urls_new", templateVars);
 });
@@ -118,8 +116,7 @@ app.get("/urls/new", (req, res) => {
 // redirects to its long URL
 app.get("/u/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL] == undefined) {
-    res.status(404).send("ID does not exist.");
-    return;
+    return res.status(404).send("ID does not exist.");
   }
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
@@ -133,8 +130,7 @@ app.get("/urls/:shortURL", (req, res) => {
     shortURL: req.params.shortURL,
   };
   if (urlDatabase[req.params.shortURL] == undefined) {
-    res.status(404).send("ID does not exist.");
-    return;
+    return res.status(404).send("ID does not exist.");
   }
   if (!templateVars.user) {
     return res.status(403).send("Please <a href='/login'>login</a> to access.");
@@ -192,8 +188,7 @@ app.post("/login", (req, res) => {
     }
     if (user) {
       if (bcrypt.compareSync(password, hashedPassword) === false) {
-        res.status(403).send("Email or password is incorrect.");
-        return;
+        return res.status(403).send("Email or password is incorrect.");
       } else {
         req.session.user_id = user.id;
         res.redirect("/urls");
@@ -212,13 +207,11 @@ app.post("/register", (req, res) => {
   const { email, password } = req.body
 
   if (email === "" || password === "") {
-    res.status(400).send("Input fields cannot be empty. Please try again.");
-    return;
+    return res.status(400).send("Input fields cannot be empty. Please try again.");
   }
   const userEmail = getUsersByEmail(req.body.email, users);
   if (userEmail) {
-    res.status(400).send("User already exists. Please try again.");
-    return;
+    return res.status(400).send("User already exists. Please try again.");
   }
   let id = generateRandomString(12);
   const user = {

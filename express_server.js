@@ -51,6 +51,7 @@ const users = {
   },
 };
 
+// returns the urls of the user that is logged in
 const urlsForUser = (id) => {
   const urlsObj = {};
   const shortURLS = Object.keys(urlDatabase);
@@ -62,6 +63,7 @@ const urlsForUser = (id) => {
   return urlsObj;
 };
 
+// checks the user id value and compares it to the database to determine the user, if they exist
 const getUserByID = (userID) => {
   const userKeys = Object.keys(users);
   for (const user of userKeys) {
@@ -72,6 +74,7 @@ const getUserByID = (userID) => {
   return undefined;
 };
 
+// home page. Will redirect to the login page if user is not logged in
 app.get("/", (req, res) => {
   const user = getUserByID(req.session.user_id);
   const templateVars = {
@@ -115,7 +118,7 @@ app.get("/urls/new", (req, res) => {
 
 // redirects to its long URL
 app.get("/u/:shortURL", (req, res) => {
-  if (urlDatabase[req.params.shortURL] == undefined) {
+  if (!urlDatabase[req.params.shortURL]) {
     return res.status(404).send("ID does not exist.");
   }
   const longURL = urlDatabase[req.params.shortURL].longURL;
@@ -129,9 +132,11 @@ app.get("/urls/:shortURL", (req, res) => {
     user,
     shortURL: req.params.shortURL,
   };
-  if (urlDatabase[req.params.shortURL] == undefined) {
+  // if the shorl url is invalid, return an error page
+  if (!urlDatabase[req.params.shortURL]) {
     return res.status(404).send("ID does not exist.");
   }
+  // if trying to access without being logged in, redirect to the login page
   if (!templateVars.user) {
     return res.status(403).send("Please <a href='/login'>login</a> to access.");
   }
@@ -182,10 +187,12 @@ app.post("/urls/:id", (req, res) => {
 app.post("/login", (req, res) => {
   const { password } = req.body;
   const user = getUsersByEmail(req.body.email, users);
+  // send an error if trying to login under an unregistered account
     if (!user) {
       res.status(403).send("User cannot be found.");
     }
     if (user) {
+      // if registered, determine if email-password combination is correct
       if (!bcrypt.compareSync(password, hashedPassword)) {
         return res.status(403).send("Email or password is incorrect.");
       } else {
@@ -196,6 +203,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
+  // clear the cookie session when a user clicks the logout button
   req.session.user_id = null;
   res.redirect("/login");
 });
@@ -204,13 +212,16 @@ app.post("/register", (req, res) => {
 
   const { email, password } = req.body
 
+  // users are unable to register with empty fields
   if (!email || (!password)) {
     return res.status(400).send("Input fields cannot be empty. Please try again.");
   }
+  // determine if user already exists in the database and send an error if true
   const userEmail = getUsersByEmail(req.body.email, users);
   if (userEmail) {
     return res.status(400).send("User already exists. Please try again.");
   }
+  // else, create a new user in the database and redirect to the urls page
   let id = generateRandomString(12);
   const user = {
     id,

@@ -52,7 +52,7 @@ const users = {
 };
 
 // returns the urls of the user that is logged in
-const urlsForUser = (id) => {
+const urlsForUser = (id, urlDatabase) => {
   const urlsObj = {};
   const shortURLS = Object.keys(urlDatabase);
   for (const shortURL of shortURLS) {
@@ -99,7 +99,7 @@ app.get("/urls", (req, res) => {
   }
   const templateVars = {
     user,
-    urls: urlsForUser(user.id),
+    urls: urlsForUser(user.id, urlDatabase),
   };
   res.render("urls_index", templateVars);
 });
@@ -127,12 +127,15 @@ app.get("/u/:shortURL", (req, res) => {
 
 // rendering urls_show
 app.get("/urls/:shortURL", (req, res) => {
-  const user = getUserByID(req.session.user_id);
+  // const user = getUserByID(req.session.user_id);
+
   const templateVars = {
-    user,
     shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL]["longURL"],
+    user: users[req.session.user_id],
   };
-  // if the shorl url is invalid, return an error page
+
+  // if the short url is invalid, return an error page
   if (!urlDatabase[req.params.shortURL]) {
     return res.status(404).send("ID does not exist.");
   }
@@ -140,7 +143,7 @@ app.get("/urls/:shortURL", (req, res) => {
   if (!templateVars.user) {
     return res.status(403).send("Please <a href='/login'>login</a> to access.");
   }
-  longURL = urlDatabase[req.params.shortURL].longURL;
+  // longURL = urlDatabase[req.params.shortURL].longURL;
   res.render("urls_show", templateVars);
 });
 
@@ -179,8 +182,23 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 // updates a URL resource
-app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id].longURL = req.body.longURL;
+app.post("/urls/:shortURL", (req, res) => {
+  //console.log("We're here")
+  let userid = req.session.user_id;
+  if (!userid) {
+    res.status(403).send("This is not yours.");
+  }
+  if (req.body.longURL === "") {
+    res.status(403).send("This cannot be empty.");
+  }
+  let urls = urlsForUser(userid, urlDatabase);
+  for (let url in urls) {
+    if (url === req.params.shortURL) {
+      let shortURL = req.params.shortURL;
+      let longURL = req.body.longURL;
+      urlDatabase[shortURL]["longURL"] = longURL;
+    }
+  }
   res.redirect(`/urls`);
 });
 
@@ -188,18 +206,18 @@ app.post("/login", (req, res) => {
   const { password } = req.body;
   const user = getUsersByEmail(req.body.email, users);
   // send an error if trying to login under an unregistered account
-    if (!user) {
-      res.status(403).send("User cannot be found.");
+  if (!user) {
+    res.status(403).send("User cannot be found.");
+  }
+  if (user) {
+    // if registered, determine if email-password combination is correct
+    if (!bcrypt.compareSync(password, hashedPassword)) {
+      return res.status(403).send("Email or password is incorrect.");
+    } else {
+      req.session.user_id = user.id;
+      res.redirect("/urls");
     }
-    if (user) {
-      // if registered, determine if email-password combination is correct
-      if (!bcrypt.compareSync(password, hashedPassword)) {
-        return res.status(403).send("Email or password is incorrect.");
-      } else {
-        req.session.user_id = user.id;
-        res.redirect("/urls");
-      }
-    }
+  }
 });
 
 app.post("/logout", (req, res) => {
@@ -209,12 +227,13 @@ app.post("/logout", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-
-  const { email, password } = req.body
+  const { email, password } = req.body;
 
   // users are unable to register with empty fields
-  if (!email || (!password)) {
-    return res.status(400).send("Input fields cannot be empty. Please try again.");
+  if (!email || !password) {
+    return res
+      .status(400)
+      .send("Input fields cannot be empty. Please try again.");
   }
   // determine if user already exists in the database and send an error if true
   const userEmail = getUsersByEmail(req.body.email, users);

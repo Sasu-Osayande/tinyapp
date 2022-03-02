@@ -52,7 +52,7 @@ const users = {
 };
 
 // returns the urls of the user that is logged in
-const urlsForUser = (id, urlDatabase) => {
+const urlsForUser = (id) => {
   const urlsObj = {};
   const shortURLS = Object.keys(urlDatabase);
   for (const shortURL of shortURLS) {
@@ -99,7 +99,7 @@ app.get("/urls", (req, res) => {
   }
   const templateVars = {
     user,
-    urls: urlsForUser(user.id, urlDatabase),
+    urls: urlsForUser(user.id),
   };
   res.render("urls_index", templateVars);
 });
@@ -127,12 +127,11 @@ app.get("/u/:shortURL", (req, res) => {
 
 // rendering urls_show
 app.get("/urls/:shortURL", (req, res) => {
-  // const user = getUserByID(req.session.user_id);
+const user = getUserByID(req.session.user_id);
 
   const templateVars = {
+    user,
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL]["longURL"],
-    user: users[req.session.user_id],
   };
 
   // if the short url is invalid, return an error page
@@ -143,7 +142,7 @@ app.get("/urls/:shortURL", (req, res) => {
   if (!templateVars.user) {
     return res.status(403).send("Please <a href='/login'>login</a> to access.");
   }
-  // longURL = urlDatabase[req.params.shortURL].longURL;
+  longURL = urlDatabase[req.params.shortURL].longURL;
   res.render("urls_show", templateVars);
 });
 
@@ -183,7 +182,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 // updates a URL resource
 app.post("/urls/:shortURL", (req, res) => {
-  //console.log("We're here")
   let userid = req.session.user_id;
   if (!userid) {
     res.status(403).send("This is not yours.");

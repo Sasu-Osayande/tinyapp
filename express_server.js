@@ -22,8 +22,6 @@ app.use(
 );
 
 const bcrypt = require("bcryptjs");
-const password = "123";
-const hashedPassword = bcrypt.hashSync(password, 10);
 
 app.set("view engine", "ejs");
 
@@ -201,15 +199,17 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const { password } = req.body;
-  const user = getUsersByEmail(req.body.email, users);
+  const email = req.body.email;
+  const password = req.body.password
+  const user = getUsersByEmail(email, users);
   // send an error if trying to login under an unregistered account
   if (!user) {
     res.status(403).send("User cannot be found.");
   }
   if (user) {
+    const result = bcrypt.compareSync(password, user.password);
     // if registered, determine if email-password combination is correct
-    if (!bcrypt.compareSync(password, hashedPassword)) {
+    if (!result) {
       return res.status(403).send("Email or password is incorrect.");
     } else {
       req.session.user_id = user.id;
@@ -225,7 +225,11 @@ app.post("/logout", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  const { email, password } = req.body;
+  const email = req.body.email;
+  const password = req.body.password;
+  let id = generateRandomString(12);
+
+  const currentUser = getUsersByEmail(email, users);
 
   // users are unable to register with empty fields
   if (!email || !password) {
@@ -234,19 +238,19 @@ app.post("/register", (req, res) => {
       .send("Input fields cannot be empty. Please try again.");
   }
   // determine if user already exists in the database and send an error if true
-  const userEmail = getUsersByEmail(req.body.email, users);
-  if (userEmail) {
+  if (currentUser) {
     return res.status(400).send("User already exists. Please try again.");
   }
   // else, create a new user in the database and redirect to the urls page
-  let id = generateRandomString(12);
-  const user = {
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
+  const newUser = {
     id,
     email: req.body.email,
     password: hashedPassword,
   };
-  users[id] = user;
-  req.session.user_id = user.id;
+  users[id] = newUser;
+  req.session.user_id = newUser.id;
   res.redirect("/urls");
 });
 
